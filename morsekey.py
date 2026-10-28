@@ -172,7 +172,9 @@ def main():
         list_ports()
         return
 
-    with jack.Client("morsekey") as client:
+    # No `with`: entering a jack.Client activates it, and callbacks must be set before that.
+    client = jack.Client("morsekey")
+    try:
         fs = client.samplerate
         if max(args.dit_freq, args.dah_freq) >= fs / 2:
             sys.exit(f"probe frequencies must stay below {fs / 2:.0f} Hz at {fs} Hz")
@@ -180,13 +182,15 @@ def main():
         client.activate()
         connect_all(client, args, app)
         print(f"{fs} Hz, block {client.blocksize}, window {app.n} frames; keep the key up for the first 0.3 s")
-        try:
-            while True:
-                time.sleep(0.05)
-                if not args.quiet:
-                    print(status_line(app), end="", flush=True)
-        except KeyboardInterrupt:
-            print()
+        while True:
+            time.sleep(0.05)
+            if not args.quiet:
+                print(status_line(app), end="", flush=True)
+    except KeyboardInterrupt:
+        print()
+    finally:
+        client.deactivate(ignore_errors=True)
+        client.close(ignore_errors=True)
 
 
 if __name__ == "__main__":
