@@ -46,6 +46,7 @@ class MorseKey:
         self.mic = client.inports.register("mic")
         self.hp = (client.outports.register("hp_left"), client.outports.register("hp_right"))
         self.out = client.outports.register("sidetone")
+        self.listen = client.outports.register("listen")
 
         # Snapshot for the status display, written by the audio thread.
         self.levels = np.zeros(2)
@@ -82,6 +83,7 @@ class MorseKey:
         for port, probe in zip(self.hp, self.probes):
             port.get_array()[:] = probe.render(frames) * self.args.probe_level + sidetone * self.args.local_level
         self.out.get_array()[:] = sidetone * self.args.level
+        self.listen.get_array()[:] = sidetone * self.args.local_level
 
 
 def find_ports(client, pattern, *, is_output, physical_fallback):
@@ -90,7 +92,14 @@ def find_ports(client, pattern, *, is_output, physical_fallback):
     if pattern:
         return [p for p in ports if re.search(pattern, p.name, re.IGNORECASE)]
     if physical_fallback:
-        return [p for p in ports if p.is_physical]
+        physical = [p for p in ports if p.is_physical]
+        devices = sorted({p.name.split(":")[0] for p in physical})
+        if len(devices) > 1:
+            # e.g. a Bluetooth headset is physical too and may come first.
+            kind = "capture" if is_output else "playback"
+            print(f"warning: several {kind} devices ({', '.join(devices)}); "
+                  f"using {physical[0].name.split(':')[0]!r}, pick with --mic/--headphones")
+        return physical
     return []
 
 
@@ -107,6 +116,15 @@ def connect_all(client, args, app):
     client.connect(app.hp[0], hp[0])
     client.connect(app.hp[1], hp[1])
     print(f"mic   {mic[0].name}\nhp    {hp[0].name}, {hp[1].name}")
+
+    if args.listen:
+        listen = find_ports(client, args.listen, is_output=False, physical_fallback=False)
+        if not listen:
+            print(f"warning: no ports match --listen {args.listen!r}")
+        for port in listen:
+            client.connect(app.listen, port)
+        if listen:
+            print("listen " + ", ".join(p.name for p in listen))
 
     if not sink:
         print(f"warning: no ports match --sink {args.sink!r}; sidetone goes nowhere (run setup_audio.sh)")
@@ -154,7 +172,9 @@ def parse_args():
     p.add_argument("--tone", type=float, default=650, help="sidetone Hz (default 650)")
     p.add_argument("--rise", type=float, default=5, help="sidetone rise/fall ms (default 5)")
     p.add_argument("--level", type=float, default=0.5, help="sidetone level to the sink (default 0.5)")
-    p.add_argument("--local-level", type=float, default=0.2, help="sidetone level in headphones, 0 = off (default 0.2)")
+    p.add_argument("--local-level", type=float, default=0.2,
+                   help="sidetone level on the combo jack and --listen ports, 0 = off (default 0.2)")
+    p.add_argument("--listen", help="regex for extra playback ports to hear the sidetone on (e.g. USB headset)")
     p.add_argument("--dit-freq", type=float, default=17000, help="probe on headphone L / tip (default 17000)")
     p.add_argument("--dah-freq", type=float, default=19000, help="probe on headphone R / ring1 (default 19000)")
     p.add_argument("--probe-level", type=float, default=0.3, help="probe amplitude (default 0.3)")

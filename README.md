@@ -72,7 +72,8 @@ Lower latency: `pw-jack -p 128 python3 morsekey.py`.
 | `--swap` | swap paddles |
 | `--mic`, `--headphones` | regex for ports if the physical defaults are wrong |
 | `--voice REGEX` | capture ports mixed into zoom_mix as your voice |
-| `--local-level 0` | no sidetone in your own headphones |
+| `--listen REGEX` | also play the sidetone on these playback ports (USB headset, HDMI, ...) |
+| `--local-level N` | sidetone level for yourself (combo jack and `--listen`), 0 = off |
 | `--dit-freq`, `--dah-freq` | lower the probes (e.g. 12000/14000) if the codec filters 17/19 kHz |
 
 ## Zoom settings
