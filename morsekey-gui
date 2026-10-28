@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# One-command start: runs the GUI with the project's venv.
+dir="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+exec "$dir/venv/bin/python" "$dir/morsekey_gui.py" "$@"

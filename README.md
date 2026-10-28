@@ -45,7 +45,29 @@ sudo apt install pipewire-jack      # or your distro's equivalent
 pip install -r requirements.txt
 ```
 
-## Run
+## GUI (recommended)
+
+```
+sudo pacman -S tk                   # Tkinter for the venv's Python
+./morsekey-gui
+```
+
+Pick the devices once; they and all settings are saved to
+`~/.config/morsekey/config.json`, and the next launch starts right away.
+The GUI creates `zoom_mix`/`zoom_mic` itself and connects devices that show up
+later (e.g. Bluetooth headphones switched on after start). On quit it removes
+the virtual devices it created, restores auto-mute, and drops all links. If it
+ever crashes, the next launch undoes the leftovers first
+(`~/.local/state/morsekey/restore.json`).
+
+- *Keep laptop speakers on* disables ALSA auto-mute so you hear the sidetone on
+  the built-in speakers with the key plugged in. They also play the 17/19 kHz
+  probes (inaudible to most people) and anything else sent to the jack output.
+- *Buffer* sets the requested PipeWire buffer; 128 frames is about 2.7 ms.
+- Latency you hear on Bluetooth headphones (150–250 ms) comes from Bluetooth
+  itself. For a snappy sidetone use the speakers, a USB headset or a USB dongle.
+
+## Command line
 
 ```
 ./setup_audio.sh                    # creates zoom_mix sink + zoom_mic source

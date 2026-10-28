@@ -27,14 +27,11 @@ class MorseKey:
         fs = client.samplerate
         self.args = args
         self.n = window_size(fs, args.dit_freq, args.dah_freq)
-        window_ms = 1000.0 * self.n / fs
+        self.window_ms = 1000.0 * self.n / fs
 
         self.detector = ProbeDetector((args.dit_freq, args.dah_freq), fs, self.n)
-        self.contacts = (ContactTracker(window_ms), ContactTracker(window_ms))
-        if args.mode == "straight":
-            self.keyer = StraightKeyer()
-        else:
-            self.keyer = IambicKeyer(args.wpm, window_ms, args.mode)
+        self.contacts = (ContactTracker(self.window_ms), ContactTracker(self.window_ms))
+        self.set_keyer(args.mode, args.wpm)
 
         self.probes = (Oscillator(args.dit_freq, fs), Oscillator(args.dah_freq, fs))
         self.tone = Oscillator(args.tone, fs)
@@ -54,6 +51,13 @@ class MorseKey:
         self.key = False
 
         client.set_process_callback(self.process)
+
+    def set_keyer(self, mode, wpm):
+        """Swap the keyer; safe while running since the audio thread reads one attribute."""
+        if mode == "straight":
+            self.keyer = StraightKeyer()
+        else:
+            self.keyer = IambicKeyer(wpm, self.window_ms, mode)
 
     def process(self, frames):
         levels = self.detector.process(self.mic.get_array())

@@ -9,8 +9,12 @@ class Oscillator:
     """Phase-continuous sine oscillator."""
 
     def __init__(self, freq, fs):
-        self.step = 2 * math.pi * freq / fs
+        self.fs = fs
+        self.set_freq(freq)
         self.phase = 0.0
+
+    def set_freq(self, freq):
+        self.step = 2 * math.pi * freq / self.fs
 
     def render(self, n):
         ph = self.phase + self.step * np.arange(n)
