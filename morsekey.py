@@ -121,10 +121,10 @@ def connect_all(client, args, app):
     client.connect(app.hp[1], hp[1])
     print(f"mic   {mic[0].name}\nhp    {hp[0].name}, {hp[1].name}")
 
-    if args.listen:
-        listen = find_ports(client, args.listen, is_output=False, physical_fallback=False)
+    for pattern in args.listen or ():
+        listen = find_ports(client, pattern, is_output=False, physical_fallback=False)
         if not listen:
-            print(f"warning: no ports match --listen {args.listen!r}")
+            print(f"warning: no ports match --listen {pattern!r}")
         for port in listen:
             client.connect(app.listen, port)
         if listen:
@@ -178,7 +178,8 @@ def parse_args():
     p.add_argument("--level", type=float, default=0.5, help="sidetone level to the sink (default 0.5)")
     p.add_argument("--local-level", type=float, default=0.2,
                    help="sidetone level on the combo jack and --listen ports, 0 = off (default 0.2)")
-    p.add_argument("--listen", help="regex for extra playback ports to hear the sidetone on (e.g. USB headset)")
+    p.add_argument("--listen", action="append",
+                   help="regex for extra playback ports to hear the sidetone on (e.g. USB headset); repeatable")
     p.add_argument("--dit-freq", type=float, default=17000, help="probe on headphone L / tip (default 17000)")
     p.add_argument("--dah-freq", type=float, default=19000, help="probe on headphone R / ring1 (default 19000)")
     p.add_argument("--probe-level", type=float, default=0.3, help="probe amplitude (default 0.3)")

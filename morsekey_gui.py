@@ -19,7 +19,7 @@ from system import SINK, SOURCE, SystemState
 CONFIG = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "morsekey" / "config.json"
 NONE = "(none)"
 DEFAULTS = dict(
-    key_input="", probe_output="", voice_input="", listen_output="", keep_speakers=False,
+    key_input="", probe_output="", voice_input="", listen_output="", listen_output2="", keep_speakers=False,
     mode="B", wpm=20.0, tone=650.0, level=0.5, local_level=0.2, swap=False, buffer=128,
     dit_freq=17000.0, dah_freq=19000.0, probe_level=0.3, rise=5.0,
 )
@@ -76,8 +76,9 @@ def wanted_links(client, own, cfg):
         voice = device_ports(client, cfg["voice_input"], capture=True)
         if voice:
             links += [(voice[i % len(voice)].name, p.name) for i, p in enumerate(sink)]
-    if cfg["listen_output"]:
-        links += [(own + "listen", p.name) for p in device_ports(client, cfg["listen_output"], capture=False)]
+    for key in ("listen_output", "listen_output2"):
+        if cfg[key]:
+            links += [(own + "listen", p.name) for p in device_ports(client, cfg[key], capture=False)]
     return set(links)
 
 
@@ -118,7 +119,8 @@ class App:
         rows = (("key_input", "Key input (combo jack mic)", True, False),
                 ("probe_output", "Probe output (combo jack)", False, False),
                 ("voice_input", "Voice mic for Zoom", True, True),
-                ("listen_output", "Hear sidetone on", False, True))
+                ("listen_output", "Hear sidetone on", False, True),
+                ("listen_output2", "Also hear sidetone on", False, True))
         for r, (key, label, capture, optional) in enumerate(rows):
             ttk.Label(dev, text=label).grid(row=r, column=0, sticky="w", **pad)
             combo = ttk.Combobox(dev, state="readonly", width=40)
